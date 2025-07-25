@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -82,6 +81,9 @@
   </div>
 
   <form id="redoForm">
+    <label>Date:
+      <input type="date" name="date" required>
+    </label>
     <label>Client:
       <input type="text" name="client" required>
     </label>
@@ -146,39 +148,53 @@
     const form = document.getElementById('redoForm');
     const tableBody = document.getElementById('redoTable').querySelector('tbody');
 
+    window.onload = function() {
+      const storedRows = JSON.parse(localStorage.getItem('redoData')) || [];
+      storedRows.forEach(data => addRowToTable(...data));
+    };
+
+    function saveToLocalStorage() {
+      const rows = Array.from(document.querySelectorAll('#redoTable tbody tr')).map(row => {
+        return Array.from(row.querySelectorAll('td')).slice(0, 7).map(cell => cell.innerText);
+      });
+      localStorage.setItem('redoData', JSON.stringify(rows));
+    }
+
     form.addEventListener('submit', function (e) {
       e.preventDefault();
-      e.stopPropagation();
 
+      const date = form.date.value;
       const client = form.client.value;
       const order = form.order.value;
       const problem = form.problem.value;
       const tech_responsible = form.tech_responsible.value;
       const solution = form.solution.value;
       const tech_executor = form.tech_executor.value;
-      const now = new Date().toLocaleDateString();
 
+      addRowToTable(date, client, order, problem, tech_responsible, solution, tech_executor);
+      saveToLocalStorage();
+      form.reset();
+    });
+
+    function addRowToTable(date, client, order, problem, responsible, solution, assigned) {
       const row = document.createElement('tr');
       row.innerHTML = `
-        <td>${now}</td>
+        <td>${date}</td>
         <td>${client}</td>
         <td>${order}</td>
         <td>${problem}</td>
-        <td>${tech_responsible}</td>
+        <td>${responsible}</td>
         <td>${solution}</td>
-        <td>${tech_executor}</td>
+        <td>${assigned}</td>
         <td><button class="delete-btn">Delete</button></td>
         <td><button class="export-btn" onclick="sendWhatsApp(this)">Send</button></td>
       `;
-
       row.querySelector('.delete-btn').addEventListener('click', () => {
         tableBody.removeChild(row);
+        saveToLocalStorage();
       });
-
       tableBody.appendChild(row);
-      alert('Entry added successfully!');
-      form.reset();
-    });
+    }
 
     function exportToXLSX() {
       const table = document.getElementById("redoTable");
@@ -200,8 +216,7 @@
         "*Solution:* " + cells[5].innerText + "\n" +
         "*Assigned Tech:* " + cells[6].innerText
       );
-      const whatsappURL = "https://wa.me/?text=" + message;
-      window.open(whatsappURL, "_blank");
+      window.open("https://wa.me/?text=" + message, "_blank");
     }
 
     function filterTable() {
